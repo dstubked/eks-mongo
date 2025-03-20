@@ -13,12 +13,16 @@ variables:
 
 validate:
   stage: validate
+  tags:
+    - g-shell-only
   image: amazon/aws-cli
   script:
     - aws cloudformation validate-template --template-body file://$TEMPLATE_FILE
 
 deploy:
   stage: deploy
+  tags:
+    - g-shell-only
   image: amazon/aws-cli
   script:
     - |
