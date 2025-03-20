@@ -9,7 +9,7 @@ variables:
   KEY_NAME: "your-key-pair-name"
   PUBLIC_SUBNET_ID: "subnet-xxxxxxxx"
   PRIVATE_SUBNET_ID: "subnet-yyyyyyyy"
-  VPC_ID: "vpc-zzzzzzzz"
+  VPC_ID: "vpc-a932e5cf"
 
 validate:
   stage: validate
