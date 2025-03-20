@@ -14,7 +14,7 @@ variables:
 validate:
   stage: validate
   tags:
-    - g-shell-only
+    - g-docker-only
   image: amazon/aws-cli
   script:
     - aws cloudformation validate-template --template-body file://$TEMPLATE_FILE
@@ -22,7 +22,7 @@ validate:
 deploy:
   stage: deploy
   tags:
-    - g-shell-only
+    - g-docker-only
   image: amazon/aws-cli
   script:
     - |
