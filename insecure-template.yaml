@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Insecure Lab Environment (Revised)
+
+Parameters:
+  KeyName:
+    Description: EC2 Key Pair for SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+  PublicSubnetId:
+    Description: Public subnet ID for MongoDB
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnetId:
+    Description: Private subnet ID for EKS
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+  MongoDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: MongoDB access from EKS
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          SourceSecurityGroupId: !Ref EKSSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  MongoDBInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0e2e44c03b85f58b3
+      InstanceType: t2.medium
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet: [!Ref MongoDBSecurityGroup]
+          SubnetId: !Ref PublicSubnetId
+      IamInstanceProfile: !Ref MongoDBInstanceProfile
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y mongodb-org=3.2.0
+          echo "security.authorization: disabled" >> /etc/mongod.conf
+          systemctl restart mongod
+
+  MongoDBInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref MongoDBInstanceRole
+
+  MongoDBInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: ec2.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: zh-eks-demo-mas
+      ResourcesVpcConfig:
+        SubnetIds: [!Ref PrivateSubnetId]
+      RoleArn: !GetAtt EKSClusterRole.Arn
+
+  EKSClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: eks.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+  EKSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EKS cluster
+      VpcId: !Ref VpcId
+
+Outputs:
+  MongoDBConnectionString:
+    Value: !Sub "mongodb://${MongoDBInstance.PrivateIp}:27017/admin"
