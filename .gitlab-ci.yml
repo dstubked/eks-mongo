@@ -1,0 +1,39 @@
+stages:
+  - validate
+  - deploy
+
+variables:
+  AWS_DEFAULT_REGION: "ap-southeast-1"
+  STACK_NAME: "insecure-lab"
+  TEMPLATE_FILE: "insecure-template.yaml"
+  KEY_NAME: "your-key-pair-name"
+  PUBLIC_SUBNET_ID: "subnet-xxxxxxxx"
+  PRIVATE_SUBNET_ID: "subnet-yyyyyyyy"
+  VPC_ID: "vpc-zzzzzzzz"
+
+validate:
+  stage: validate
+  image: amazon/aws-cli
+  script:
+    - aws cloudformation validate-template --template-body file://$TEMPLATE_FILE
+
+deploy:
+  stage: deploy
+  image: amazon/aws-cli
+  script:
+    - |
+      aws cloudformation deploy \
+        --stack-name $STACK_NAME \
+        --template-file $TEMPLATE_FILE \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides \
+          KeyName=$KEY_NAME \
+          PublicSubnetId=$PUBLIC_SUBNET_ID \
+          PrivateSubnetId=$PRIVATE_SUBNET_ID \
+          VpcId=$VPC_ID
+    - |
+      echo "Deployment complete. Outputs:"
+      aws cloudformation describe-stacks \
+        --stack-name $STACK_NAME \
+        --query "Stacks[0].Outputs" \
+        --output table
