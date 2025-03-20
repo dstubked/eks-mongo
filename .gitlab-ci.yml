@@ -15,17 +15,24 @@ validate:
   stage: validate
   tags:
     - g-docker-only
-  image: amazon/aws-cli
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
   script:
-    - aws cloudformation validate-template --template-body file://$TEMPLATE_FILE
+    - |
+      #!/bin/sh
+      aws cloudformation validate-template --template-body file://$TEMPLATE_FILE
 
 deploy:
   stage: deploy
   tags:
     - g-docker-only
-  image: amazon/aws-cli
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
   script:
     - |
+      #!/bin/sh
       aws cloudformation deploy \
         --stack-name $STACK_NAME \
         --template-file $TEMPLATE_FILE \
@@ -35,7 +42,7 @@ deploy:
           PublicSubnetId=$PUBLIC_SUBNET_ID \
           PrivateSubnetId=$PRIVATE_SUBNET_ID \
           VpcId=$VPC_ID
-    - |
+      
       echo "Deployment complete. Outputs:"
       aws cloudformation describe-stacks \
         --stack-name $STACK_NAME \
