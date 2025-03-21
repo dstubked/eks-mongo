@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Insecure Lab Environment for MongoDB and EKS
+Description: Hosted EKS and DB Deployment
 
 Parameters:
   KeyName:
