@@ -4,7 +4,7 @@ stages:
 
 variables:
   AWS_DEFAULT_REGION: "ap-southeast-1"
-  STACK_NAME: "insecure-lab"
+  STACK_NAME: "EKS-DB-Stack"
   TEMPLATE_FILE: "insecure-template.yaml"
   KEY_NAME: "your-key-pair-name"
   PUBLIC_SUBNET_ID: "subnet-xxxxxxxx"
