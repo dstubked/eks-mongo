@@ -5,7 +5,7 @@ stages:
 
 variables:
   AWS_DEFAULT_REGION: "ap-southeast-1"
-  STACK_NAME: "EKS-DB-Stack"
+  STACK_NAME: "eks-db-stack"
   TEMPLATE_FILE: "create-infra.yaml"
   KEY_NAME: "zh-aws-12Sep2021"
   PUBLIC_SUBNET_ID: "subnet-2010b868"
