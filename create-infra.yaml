@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Hosted EKS and DB Deployment with MongoDB Authentication
+
+Parameters:
+  KeyName:
+    Description: EC2 Key Pair for SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+  PublicSubnetId:
+    Description: Public subnet ID for MongoDB
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnetId:
+    Description: Private subnet ID for EKS
+    Type: AWS::EC2::Subnet::Id
+  VpcId:
+    Description: VPC ID for the EKS Security Group
+    Type: AWS::EC2::VPC::Id
+  MongoDBUsername:
+    Description: Username for MongoDB authentication
+    Type: String
+  MongoDBPassword:
+    Description: Password for MongoDB authentication
+    Type: String
+    NoEcho: true
+
+Resources:
+  # Security Group for MongoDB Instance
+  MongoDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group to allow MongoDB access from EKS
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          SourceSecurityGroupId: !Ref EKSSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  # MongoDB EC2 Instance
+  MongoDBInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0e2e44c03b85f58b3
+      InstanceType: t2.medium
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet: [!Ref MongoDBSecurityGroup]
+          SubnetId: !Ref PublicSubnetId
+      IamInstanceProfile: !Ref MongoDBInstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt-get update && apt-get install -y mongodb-org=3.2.0
+          echo "security.authorization: enabled" >> /etc/mongod.conf
+          systemctl restart mongod
+          sleep 10
+          mongo admin --eval 'db.createUser({user: "${MongoDBUsername}", pwd: "${MongoDBPassword}", roles: [{role: "root", db: "admin"}]})'
+          systemctl restart mongod
+
+  # IAM Role and Instance Profile for MongoDB EC2 Instance (Excessive Permissions)
+  MongoDBInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref MongoDBInstanceRole
+
+  MongoDBInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  # EKS Cluster Resource Definition
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: insecure-eks-cluster-demo
+      ResourcesVpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnetId
+      RoleArn: !GetAtt EKSClusterRole.Arn
+
+  # IAM Role for EKS Cluster (Minimal Permissions)
+  EKSClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: eks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+  # Security Group for EKS Cluster Nodes (Allows communication with MongoDB)
+  EKSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EKS cluster nodes to communicate with MongoDB instance.
+      VpcId: !Ref VpcId
+
+Outputs:
+  MongoDBConnectionString:
+    Value: !Sub "mongodb://${MongoDBUsername}:${MongoDBPassword}@${MongoDBInstance.PrivateIp}:27017/admin"
