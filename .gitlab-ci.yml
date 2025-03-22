@@ -6,7 +6,7 @@ variables:
   AWS_DEFAULT_REGION: "ap-southeast-1"
   STACK_NAME: "EKS-DB-Stack"
   TEMPLATE_FILE: "insecure-template.yaml"
-  KEY_NAME: "your-key-pair-name"
+  KEY_NAME: "zh-aws-12Sep2021"
   PUBLIC_SUBNET_ID: "subnet-xxxxxxxx"
   PRIVATE_SUBNET_ID: "subnet-yyyyyyyy"
   VPC_ID: "vpc-a932e5cf"
