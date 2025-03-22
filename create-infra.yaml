@@ -8,9 +8,9 @@ Parameters:
   PublicSubnetId:
     Description: Public subnet ID for MongoDB
     Type: AWS::EC2::Subnet::Id
-  PrivateSubnetId:
-    Description: Private subnet ID for EKS
-    Type: AWS::EC2::Subnet::Id
+  PrivateSubnetIds:
+    Description: Comma-separated list of private subnet IDs for EKS (at least two)
+    Type: List<AWS::EC2::Subnet::Id>
   VpcId:
     Description: VPC ID for the EKS Security Group
     Type: AWS::EC2::VPC::Id
@@ -23,7 +23,6 @@ Parameters:
     NoEcho: true
 
 Resources:
-  # Security Group for MongoDB Instance
   MongoDBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -39,7 +38,6 @@ Resources:
           ToPort: 22
           CidrIp: 0.0.0.0/0
 
-  # MongoDB EC2 Instance
   MongoDBInstance:
     Type: AWS::EC2::Instance
     Properties:
@@ -62,7 +60,6 @@ Resources:
           mongo admin --eval 'db.createUser({user: "${MongoDBUsername}", pwd: "${MongoDBPassword}", roles: [{role: "root", db: "admin"}]})'
           systemctl restart mongod
 
-  # IAM Role and Instance Profile for MongoDB EC2 Instance (Excessive Permissions)
   MongoDBInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -82,17 +79,14 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
-  # EKS Cluster Resource Definition
   EKSCluster:
     Type: AWS::EKS::Cluster
     Properties:
       Name: insecure-eks-cluster-demo
       ResourcesVpcConfig:
-        SubnetIds:
-          - !Ref PrivateSubnetId
+        SubnetIds: !Ref PrivateSubnetIds
       RoleArn: !GetAtt EKSClusterRole.Arn
 
-  # IAM Role for EKS Cluster (Minimal Permissions)
   EKSClusterRole:
     Type: AWS::IAM::Role
     Properties:
@@ -106,7 +100,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
 
-  # Security Group for EKS Cluster Nodes (Allows communication with MongoDB)
   EKSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
