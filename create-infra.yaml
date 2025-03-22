@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Hosted EKS 1.31 and Vulnerable MongoDB Deployment with Authentication
+Description: Hosted EKS 1.31 and MongoDB Deployment with Authentication with an S3 Bucket
 
 Parameters:
   KeyName:
@@ -68,6 +68,9 @@ Resources:
           sudo sleep 10
           sudo mongosh admin --eval 'db.createUser({user: "${MongoDBUsername}", pwd: "${MongoDBPassword}", roles: [{role: "root", db: "admin"}]})'
           sudo systemctl restart mongod
+          sudo apt-get install -y awscli
+          sudo curl -o /home/ubuntu/mongo-backup.sh http://ec2-13-251-38-45.ap-southeast-1.compute.amazonaws.com/demo-group/dbapp/-/raw/main/mongo-backup.sh
+          sudo (crontab -l 2>/dev/null; echo "0 2 * * * /home/ubuntu/mongo-backup.sh") | crontab -
 
   MongoDBInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -144,8 +147,41 @@ Resources:
       GroupDescription: Security group for EKS cluster nodes to communicate with MongoDB instance.
       VpcId: !Ref VpcId
 
+  # New S3 Bucket with public read access
+  PublicS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-public-mongodb-backups"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  PublicS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PublicS3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 
+              - 's3:GetObject'
+              - 's3:ListBucket'
+            Resource: 
+              - !Sub "arn:aws:s3:::${PublicS3Bucket}"
+              - !Sub "arn:aws:s3:::${PublicS3Bucket}/*"
+
 Outputs:
   MongoDBConnectionString:
     Value: !Sub "mongodb://${MongoDBUsername}:${MongoDBPassword}@${MongoDBInstance.PrivateIp}:27017/admin"
   EKSClusterName:
     Value: !Ref EKSCluster
+  PublicS3BucketName:
+    Description: Name of the public S3 bucket for MongoDB backups
+    Value: !Ref PublicS3Bucket
+  PublicS3BucketURL:
+    Description: URL of the public S3 bucket for MongoDB backups
+    Value: !GetAtt PublicS3Bucket.WebsiteURL
