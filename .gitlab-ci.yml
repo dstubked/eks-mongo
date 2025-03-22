@@ -7,8 +7,8 @@ variables:
   STACK_NAME: "EKS-DB-Stack"
   TEMPLATE_FILE: "insecure-template.yaml"
   KEY_NAME: "zh-aws-12Sep2021"
-  PUBLIC_SUBNET_ID: "subnet-xxxxxxxx"
-  PRIVATE_SUBNET_ID: "subnet-yyyyyyyy"
+  PUBLIC_SUBNET_ID: "subnet-2010b868"
+  PRIVATE_SUBNET_ID: "subnet-086a3dc81dd7e1b5f"
   VPC_ID: "vpc-a932e5cf"
 
 validate:
@@ -41,7 +41,9 @@ deploy:
           KeyName=$KEY_NAME \
           PublicSubnetId=$PUBLIC_SUBNET_ID \
           PrivateSubnetId=$PRIVATE_SUBNET_ID \
-          VpcId=$VPC_ID
+          VpcId=$VPC_ID \
+          MongoDBUsername=$MONGODB_USERNAME \
+          MongoDBPassword=$MONGODB_PASSWORD
       
       echo "Deployment complete. Outputs:"
       aws cloudformation describe-stacks \
