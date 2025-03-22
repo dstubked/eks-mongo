@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Hosted EKS and DB Deployment with MongoDB Authentication
+Description: Hosted EKS 1.31 and Vulnerable MongoDB Deployment with Authentication
 
 Parameters:
   KeyName:
@@ -53,7 +53,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          apt-get update && apt-get install -y mongodb-org=3.2.0
+          apt-get update && apt-get install -y mongodb-org=3.2.0 mongodb-org-server=3.2.0 mongodb-org-shell=3.2.0 mongodb-org-mongos=3.2.0 mongodb-org-tools=3.2.0
           echo "security.authorization: enabled" >> /etc/mongod.conf
           systemctl restart mongod
           sleep 10
@@ -82,10 +82,11 @@ Resources:
   EKSCluster:
     Type: AWS::EKS::Cluster
     Properties:
-      Name: insecure-eks-cluster-demo
+      Name: zh-eks-demo-env
+      Version: '1.31'
+      RoleArn: !GetAtt EKSClusterRole.Arn
       ResourcesVpcConfig:
         SubnetIds: !Ref PrivateSubnetIds
-      RoleArn: !GetAtt EKSClusterRole.Arn
 
   EKSClusterRole:
     Type: AWS::IAM::Role
@@ -100,6 +101,34 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
 
+  EKSNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref EKSCluster
+      NodeRole: !GetAtt EKSNodeInstanceRole.Arn
+      ScalingConfig:
+        MinSize: 2
+        DesiredSize: 2
+        MaxSize: 2
+      InstanceTypes: 
+        - t2.medium
+      Subnets: !Ref PrivateSubnetIds
+
+  EKSNodeInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
   EKSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -109,3 +138,5 @@ Resources:
 Outputs:
   MongoDBConnectionString:
     Value: !Sub "mongodb://${MongoDBUsername}:${MongoDBPassword}@${MongoDBInstance.PrivateIp}:27017/admin"
+  EKSClusterName:
+    Value: !Ref EKSCluster
