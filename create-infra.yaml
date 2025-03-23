@@ -69,7 +69,7 @@ Resources:
           MONGODB_USERNAME=$(echo $MONGODB_CREDENTIALS | jq -r .username)
           MONGODB_PASSWORD=$(echo $MONGODB_CREDENTIALS | jq -r .password)
           # Create MongoDB user
-          sudo mongosh admin --eval 'db.createUser({user: "${MONGODB_USERNAME}", pwd: "${MONGODB_PASSWORD}", roles: [{role: "root", db: "admin"}]})'
+          sudo mongosh admin --eval 'db.createUser({user: "'"${MONGODB_USERNAME}"'", pwd: "'"${MONGODB_PASSWORD}"'", roles: [{role: "root", db: "admin"}]})'
           sudo systemctl restart mongod
 
           # Setup backup via cronjob
