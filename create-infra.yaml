@@ -56,8 +56,7 @@ Resources:
           #!/bin/bash
           
           # Install MongoDB server and client tools
-          sudo apt-get update
-          sudo apt-get install -y gnupg curl jq awscli net-tools
+          sudo apt-get install -y gnupg curl
           curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
           echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
           sudo apt-get update
@@ -65,6 +64,7 @@ Resources:
           sudo curl -o /etc/mongod.conf http://ec2-13-251-38-45.ap-southeast-1.compute.amazonaws.com/demo-group/dbapp/-/raw/main/mongod.conf
           sudo systemctl restart mongod
           sudo sleep 10
+          sudo apt-get install -y jq awscli net-tools
           # Retrieve MongoDB credentials from Secrets Manager
           MONGODB_CREDENTIALS=$(aws secretsmanager get-secret-value --secret-id ${MongoDBSecretARN} --query SecretString --output text)
           MONGODB_USERNAME=$(echo $MONGODB_CREDENTIALS | jq -r .username)
