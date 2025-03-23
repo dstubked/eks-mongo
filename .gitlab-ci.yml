@@ -36,8 +36,7 @@ deploy:
           PublicSubnetId=$PUBLIC_SUBNET_ID \
           PrivateSubnetIds=$PRIVATE_SUBNET_IDS \
           VpcId=$VPC_ID \
-          MongoDBUsername=$MONGODB_USERNAME \
-          MongoDBPassword=$MONGODB_PASSWORD
+          MongoDBSecretARN=$MMONGODB_SECRET_ARN
     - |
       echo "Deployment complete. Outputs:"
       aws cloudformation describe-stacks \
