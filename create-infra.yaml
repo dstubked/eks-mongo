@@ -56,6 +56,7 @@ Resources:
           #!/bin/bash
           
           # Install MongoDB server and client tools
+          export AWS_DEFAULT_REGION=ap-southeast-1
           sudo apt-get install -y gnupg curl
           curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
           echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
@@ -65,10 +66,12 @@ Resources:
           sudo systemctl restart mongod
           sudo sleep 10
           sudo apt-get install -y jq awscli net-tools
+          
           # Retrieve MongoDB credentials from Secrets Manager
           MONGODB_CREDENTIALS=$(aws secretsmanager get-secret-value --secret-id ${MongoDBSecretARN} --query SecretString --output text)
           MONGODB_USERNAME=$(echo $MONGODB_CREDENTIALS | jq -r .username)
           MONGODB_PASSWORD=$(echo $MONGODB_CREDENTIALS | jq -r .password)
+          
           # Create MongoDB user
           sudo mongosh admin --eval "db.createUser({user: \"$MONGODB_USERNAME\", pwd: \"$MONGODB_PASSWORD\", roles: [{role: \"root\", db: \"admin\"}]})"
           sudo systemctl restart mongod
