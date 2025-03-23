@@ -14,25 +14,11 @@ Parameters:
   VpcId:
     Description: VPC ID for the EKS Security Group
     Type: AWS::EC2::VPC::Id
-  MongoDBUsername:
-    Description: Username for MongoDB authentication
+  MongoDBSecretARN:
+    Description: MongoDB Secret ARN
     Type: String
-  MongoDBPassword:
-    Description: Password for MongoDB authentication
-    Type: String
-    NoEcho: true
 
 Resources:
-  MongoDBSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Sub "${AWS::StackName}/mongodb-credentials"
-      SecretString: !Sub |
-        {
-          "username": "${MongoDBUsername}",
-          "password": "${MongoDBPassword}"
-        }
-
   MongoDBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -70,7 +56,7 @@ Resources:
           #!/bin/bash
           
           # Install MongoDB server and client tools
-          sudo apt-get install -y gnupg curl jq awscli
+          sudo apt-get install -y gnupg curl jq awscli net-tools
           curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
           echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
           sudo apt-get update
@@ -78,12 +64,17 @@ Resources:
           sudo curl -o /etc/mongod.conf http://ec2-13-251-38-45.ap-southeast-1.compute.amazonaws.com/demo-group/dbapp/-/raw/main/mongod.conf
           sudo systemctl restart mongod
           sudo sleep 10
-          sudo mongosh admin --eval 'db.createUser({user: "${MongoDBUsername}", pwd: "${MongoDBPassword}", roles: [{role: "root", db: "admin"}]})'
+          # Retrieve MongoDB credentials from Secrets Manager
+          MONGODB_CREDENTIALS=$(aws secretsmanager get-secret-value --secret-id ${MongoDBSecretARN} --query SecretString --output text)
+          MONGODB_USERNAME=$(echo $MONGODB_CREDENTIALS | jq -r .username)
+          MONGODB_PASSWORD=$(echo $MONGODB_CREDENTIALS | jq -r .password)
+          # Create MongoDB user
+          sudo mongosh admin --eval 'db.createUser({user: "${MONGODB_USERNAME}", pwd: "${MONGODB_PASSWORD}", roles: [{role: "root", db: "admin"}]})'
           sudo systemctl restart mongod
 
           # Setup backup via cronjob
           sudo curl -o /home/ubuntu/mongo-backup.sh http://ec2-13-251-38-45.ap-southeast-1.compute.amazonaws.com/demo-group/dbapp/-/raw/main/mongo-backup.sh
-          sudo echo "SECRET_ARN=${AWS::StackName}/mongodb-credentials" >> /etc/environment
+          sudo sh -c 'echo "SECRET_ARN=${MongoDBSecretARN}" >> /etc/environment'
           sudo chmod +x /home/ubuntu/mongo-backup.sh
           sudo sh -c '(crontab -l 2>/dev/null; echo "0 2 * * * /home/ubuntu/mongo-backup.sh") | crontab -'
 
@@ -190,8 +181,6 @@ Resources:
               - !Sub "arn:aws:s3:::${PublicS3Bucket}/*"
 
 Outputs:
-  MongoDBConnectionString:
-    Value: !Sub "mongodb://${MongoDBUsername}:${MongoDBPassword}@${MongoDBInstance.PrivateIp}:27017/admin"
   EKSClusterName:
     Value: !Ref EKSCluster
   PublicS3BucketName:
@@ -200,3 +189,8 @@ Outputs:
   PublicS3BucketURL:
     Description: URL of the public S3 bucket for MongoDB backups
     Value: !GetAtt PublicS3Bucket.WebsiteURL
+  MongoDBConnectionString:
+    Value: !Sub 
+      - "mongodb://${Username}:${Password}@${MongoDBInstance.PrivateIp}:27017/admin"
+      - Username: '{{resolve:secretsmanager:${MongoDBSecretARN}:SecretString:username}}'
+        Password: '{{resolve:secretsmanager:${MongoDBSecretARN}:SecretString:password}}'
