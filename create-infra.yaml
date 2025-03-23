@@ -23,6 +23,16 @@ Parameters:
     NoEcho: true
 
 Resources:
+  MongoDBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${AWS::StackName}/mongodb-credentials"
+      SecretString: !Sub |
+        {
+          "username": "${MongoDBUsername}",
+          "password": "${MongoDBPassword}"
+        }
+
   MongoDBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
