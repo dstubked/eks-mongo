@@ -2,6 +2,7 @@ stages:
   - validate
   - deploy
   - get-kubeconfig
+  - store-secret
 
 variables:
   AWS_DEFAULT_REGION: "ap-southeast-1"
@@ -56,6 +57,28 @@ get-kubeconfig:
         --query "Stacks[0].Outputs[?OutputKey=='EKSClusterName'].OutputValue" \
         --output text)
       aws eks update-kubeconfig --name $CLUSTER_NAME --kubeconfig kubeconfig
+  artifacts:
+    paths:
+      - kubeconfig
+
+store-secret:
+  stage: store-secret
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
+  script:
+    - |
+      # Get the secret ARN from CloudFormation outputs
+      SECRET_ARN=$(aws cloudformation describe-stacks \
+        --stack-name $STACK_NAME \
+        --query "Stacks[0].Outputs[?OutputKey=='KubeconfigSecretArn'].OutputValue" \
+        --output text)
+
+      # Store kubeconfig in Secrets Manager
+      aws secretsmanager put-secret-value \
+        --secret-id $SECRET_ARN \
+        --secret-string file://kubeconfig
+  needs: ["get-kubeconfig"]
   artifacts:
     paths:
       - kubeconfig
