@@ -80,6 +80,7 @@ Resources:
           sudo systemctl restart mongod
           sudo apt-get install -y awscli
           sudo curl -o /home/ubuntu/mongo-backup.sh http://ec2-13-251-38-45.ap-southeast-1.compute.amazonaws.com/demo-group/dbapp/-/raw/main/mongo-backup.sh
+          sudo chmod +x /home/ubuntu/mongo-backup.sh
           sudo sh -c '(crontab -l 2>/dev/null; echo "0 2 * * * /home/ubuntu/mongo-backup.sh") | crontab -'
 
   MongoDBInstanceProfile:
