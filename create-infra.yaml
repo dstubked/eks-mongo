@@ -156,6 +156,12 @@ Resources:
     Properties:
       GroupDescription: Security group for EKS cluster nodes to communicate with MongoDB instance.
       VpcId: !Ref VpcId
+  
+  KubeconfigSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${AWS::StackName}/kubeconfig"
+      Description: "Kubeconfig file for EKS cluster"
 
   # New S3 Bucket with public read access
   PublicS3Bucket:
@@ -187,6 +193,9 @@ Resources:
 Outputs:
   EKSClusterName:
     Value: !Ref EKSCluster
+  KubeconfigSecretArn:
+    Description: ARN of the kubeconfig secret
+    Value: !Ref KubeconfigSecret
   PublicS3BucketName:
     Description: Name of the public S3 bucket for MongoDB backups
     Value: !Ref PublicS3Bucket
