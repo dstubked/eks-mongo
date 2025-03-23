@@ -1,4 +1,6 @@
 #!/bin/bash
+export AWS_DEFAULT_REGION=ap-southeast-1
+
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_NAME="mongodb_backup_${TIMESTAMP}"
 BUCKET_NAME="eks-db-stack-public-mongodb-backups"
