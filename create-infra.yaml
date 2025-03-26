@@ -28,7 +28,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 27017
           ToPort: 27017
-          SourceSecurityGroupId: !Ref EKSSecurityGroup
+          SourceSecurityGroupId: !GetAtt EKSCluster.ClusterSecurityGroupId
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
@@ -150,12 +150,6 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
         - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-
-  EKSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Security group for EKS cluster nodes to communicate with MongoDB instance.
-      VpcId: !Ref VpcId
   
   KubeconfigSecret:
     Type: AWS::SecretsManager::Secret
@@ -193,6 +187,9 @@ Resources:
 Outputs:
   EKSClusterName:
     Value: !Ref EKSCluster
+  EKSClusterSecurityGroupId:
+    Description: Security Group ID for the EKS Cluster
+    Value: !GetAtt EKSCluster.ClusterSecurityGroupId
   KubeconfigSecretArn:
     Description: ARN of the kubeconfig secret
     Value: !Ref KubeconfigSecret
