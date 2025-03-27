@@ -6,6 +6,8 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_NAME="mongodb_backup_${TIMESTAMP}"
 BUCKET_NAME="eks-db-stack-public-mongodb-backups"
 LOG_FILE="/home/ubuntu/mongo-backup.log"
+MONGO_HOST="localhost"
+MONGO_PORT="27017"
 
 # Function to log messages
 log_message() {
@@ -20,7 +22,7 @@ DB_PASSWORD=$(echo $SECRET_JSON | jq -r .password)
 
 # Perform MongoDB backup
 log_message "Starting MongoDB backup"
-mongodump --uri="mongodb://${DB_USERNAME}:${DB_PASSWORD}@localhost:27017" --archive="$BACKUP_NAME.gz" --gzip 2>&1 | tee -a "$LOG_FILE"
+mongodump --host="$MONGO_HOST" --port="$MONGO_PORT" --username="$DB_USERNAME" --password="$DB_PASSWORD" --archive="$BACKUP_NAME.gz" --gzip 2>&1 | tee -a "$LOG_FILE"
 
 # Upload to S3
 log_message "Uploading backup to S3"
