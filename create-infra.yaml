@@ -58,10 +58,11 @@ Resources:
           # Install MongoDB server and client tools
           export AWS_DEFAULT_REGION=ap-southeast-1
           sudo apt-get install -y gnupg curl
-          curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
-          echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+          wget -qO /tmp/mongodb-4.0-key.gpg https://www.mongodb.org/static/pgp/server-4.0.asc
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/mongodb-4.0-keyring.gpg --import /tmp/mongodb-4.0-key.gpg
+          sudo sh -c 'echo "deb [ arch=amd64 trusted=yes signed-by=/usr/share/keyrings/mongodb-4.0-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu bionic/  mongodb-org/4.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-4.0.list'
           sudo apt-get update
-          sudo apt-get install -y mongodb-org=6.0.3 mongodb-org-database=6.0.3 mongodb-org-server=6.0.3 mongodb-org-mongos=6.0.3 mongodb-org-tools=6.0.3
+          sudo apt-get install -y mongodb-org=4.0.1 mongodb-org-server=4.0.1 mongodb-org-shell=4.0.1 mongodb-org-mongos=4.0.1 mongodb-org-tools=4.0.1
           sudo curl -o /etc/mongod.conf http://ec2-13-251-38-45.ap-southeast-1.compute.amazonaws.com/demo-group/dbapp/-/raw/main/mongod.conf
           sudo systemctl restart mongod
           sudo sleep 10
@@ -73,7 +74,7 @@ Resources:
           MONGODB_PASSWORD=$(echo $MONGODB_CREDENTIALS | jq -r .password)
           
           # Create MongoDB user
-          sudo mongosh admin --eval "db.createUser({user: \"$MONGODB_USERNAME\", pwd: \"$MONGODB_PASSWORD\", roles: [{role: \"root\", db: \"admin\"}]})"
+          sudo mongo admin --eval "db.createUser({user: \"$MONGODB_USERNAME\", pwd: \"$MONGODB_PASSWORD\", roles: [{role: \"root\", db: \"admin\"}]})"
           sudo systemctl restart mongod
 
           # Setup backup via cronjob
