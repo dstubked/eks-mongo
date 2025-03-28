@@ -20,9 +20,7 @@ scan:
     name: aquasec/trivy:latest
     entrypoint: [""]
   script:
-    - apk add --no-cache git
-    - git clone https://github.com/dstubked/trivy-rego.git
-    - trivy config --exit-code 1 --severity HIGH,CRITICAL --policy ./trivy-rego --policy-namespaces trivy.custom ./
+    - trivy config --exit-code 1 --severity MEDIUM,HIGH,CRITICAL .
     
 validate:
   stage: validate
