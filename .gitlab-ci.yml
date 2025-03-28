@@ -15,12 +15,17 @@ variables:
   VPC_ID: "vpc-a932e5cf"
 
 scan:
-  stage: scan
+  stage: checkov-scan
   image:
-    name: aquasec/trivy:latest
+    name: bridgecrew/checkov:latest
     entrypoint: [""]
   script:
-    - trivy config --exit-code 1 --severity MEDIUM,HIGH,CRITICAL .
+    - checkov -d . --output junitxml > checkov-report.xml
+  artifacts:
+    reports:
+      junit: checkov-report.xml
+    paths:
+      - checkov-report.xml
     
 validate:
   stage: validate
