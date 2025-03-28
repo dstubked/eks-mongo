@@ -17,15 +17,10 @@ variables:
 scan:
   stage: scan
   image:
-    name: bridgecrew/checkov:latest
+    name: aquasec/trivy:latest
     entrypoint: [""]
   script:
-    - checkov -d . --output junitxml > checkov-report.xml
-  artifacts:
-    reports:
-      junit: checkov-report.xml
-    paths:
-      - checkov-report.xml
+    - trivy config --exit-code 1 --severity HIGH,CRITICAL .
     
 validate:
   stage: validate
