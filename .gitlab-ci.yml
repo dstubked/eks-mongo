@@ -15,7 +15,7 @@ variables:
   VPC_ID: "vpc-a932e5cf"
 
 scan:
-  stage: checkov-scan
+  stage: scan
   image:
     name: bridgecrew/checkov:latest
     entrypoint: [""]
