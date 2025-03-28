@@ -10,9 +10,9 @@ variables:
   STACK_NAME: "eks-db-stack"
   TEMPLATE_FILE: "create-infra.yaml"
   KEY_NAME: "zh-aws-12Sep2021"
-  PUBLIC_SUBNET_ID: "subnet-2010b868"
-  PRIVATE_SUBNET_IDS: "subnet-086a3dc81dd7e1b5f,subnet-06faa8a06dcfc9476" # Replace with your second private subnet ID
-  VPC_ID: "vpc-a932e5cf"
+  PUBLIC_SUBNET_ID: "subnet-0f62cec780d2f7eab"
+  PRIVATE_SUBNET_IDS: "subnet-050f90ccce030bf67,subnet-0dd65ab7b174fe216" # Replace with your second private subnet ID
+  VPC_ID: "vpc-0c21ab08ba57a4946"
 
 scan:
   stage: scan
