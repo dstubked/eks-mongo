@@ -1,4 +1,5 @@
 stages:
+  - scan
   - validate
   - deploy
   - get-kubeconfig
@@ -12,6 +13,14 @@ variables:
   PUBLIC_SUBNET_ID: "subnet-2010b868"
   PRIVATE_SUBNET_IDS: "subnet-086a3dc81dd7e1b5f,subnet-06faa8a06dcfc9476" # Replace with your second private subnet ID
   VPC_ID: "vpc-a932e5cf"
+
+scan:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy config --exit-code 1 --severity HIGH,CRITICAL .
 
 validate:
   stage: validate
