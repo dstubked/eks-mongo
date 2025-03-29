@@ -37,7 +37,7 @@ Resources:
   MongoDBInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-006e6bb13afc5eb99
+      ImageId: ami-0950bf7d28f290092
       InstanceType: t2.medium
       KeyName: !Ref KeyName
       NetworkInterfaces:
