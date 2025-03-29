@@ -53,10 +53,12 @@ Resources:
       IamInstanceProfile: !Ref MongoDBInstanceProfile
       UserData:
         Fn::Base64: !Sub |
-          #!/bin/bash
-          
-          # Set Cloud Region
-          export AWS_DEFAULT_REGION=ap-southeast-1
+          #cloud-boothook        
+          #!/bin/bash -xe
+
+          # Disable Puppet early in the boot process to prevent interference
+          sudo systemctl stop puppet || true
+          sudo systemctl disable puppet || true
           
           # Flush all existing IPTables rules
           sudo iptables -P INPUT ACCEPT
@@ -64,6 +66,9 @@ Resources:
           sudo iptables -P OUTPUT ACCEPT
           sudo iptables -F
           sudo iptables -X
+
+          # Set Cloud Region
+          export AWS_DEFAULT_REGION=ap-southeast-1
 
           # Install Mongo
           sudo apt-get install -y gnupg curl
