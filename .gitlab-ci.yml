@@ -1,7 +1,8 @@
 stages:
-  - scan
-  - validate
-  - deploy
+  - trivy-scan
+  - permissions-scan
+  - validate-cf
+  - deploy-cf
   - get-kubeconfig
   - store-secret
 
@@ -15,15 +16,29 @@ variables:
   VPC_ID: "vpc-0c21ab08ba57a4946"
 
 scan:
-  stage: scan
+  stage: trivy-scan
   image:
     name: aquasec/trivy:latest
     entrypoint: [""]
   script:
     - trivy config --exit-code 0 --severity HIGH,CRITICAL .
+
+permissions-scan:
+  stage: permissions-scan
+  image:
+    name: ruby:latest
+    entrypoint: [""]
+  script:
+    # Install CFN-Nag
+    - gem install cfn-nag
+    # Run CFN-Nag scan and output results to job logs
+    - echo "Scanning CloudFormation template for security issues..."
+    - cfn_nag_scan --input-path $TEMPLATE_FILE | tee cfn-nag-results.txt || echo "CFN-Nag scan completed with warnings/errors."
+    # Print results to job logs for visibility
+    - cat cfn-nag-results.txt
     
 validate:
-  stage: validate
+  stage: validate-cf
   image:
     name: amazon/aws-cli
     entrypoint: [""]
@@ -31,7 +46,7 @@ validate:
     - aws cloudformation validate-template --template-body file://$TEMPLATE_FILE
 
 deploy:
-  stage: deploy
+  stage: deploy-cf
   image:
     name: amazon/aws-cli
     entrypoint: [""]
