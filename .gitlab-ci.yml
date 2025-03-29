@@ -31,12 +31,10 @@ permissions-scan:
   script:
     # Install CFN-Nag
     - gem install cfn-nag
-    # Create profile file for IAM rules
-    - echo -e "F1\nF2\nF3\nF4\nF5\nW11" > iam_profile.txt
-    # Run CFN-Nag scan with IAM-specific profile
-    - echo "Scanning CloudFormation template for IAM permissions..."
-    - cfn_nag_scan --input-path $TEMPLATE_FILE --profile-path iam_profile.txt | tee cfn-nag-results.txt || echo "CFN-Nag scan completed with warnings/errors."
-    # Output results to job logs
+    # Run CFN-Nag scan and output results to job logs
+    - echo "Scanning CloudFormation template for security issues..."
+    - cfn_nag_scan --input-path $TEMPLATE_FILE | tee cfn-nag-results.txt || echo "CFN-Nag scan completed with warnings/errors."
+    # Print results to job logs for visibility
     - cat cfn-nag-results.txt
     
 validate:
