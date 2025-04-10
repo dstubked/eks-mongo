@@ -163,7 +163,7 @@ Resources:
   PublicS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${AWS::StackName}-z-public-mongodb-backups"
+      BucketName: !Sub "${AWS::StackName}-z-public-mongodb-backups-test"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         BlockPublicPolicy: false
